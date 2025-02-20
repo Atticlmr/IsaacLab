@@ -21,7 +21,9 @@ from typing import Literal
 import carb
 import omni.client
 
-NUCLEUS_ASSET_ROOT_DIR = carb.settings.get_settings().get("/persistent/isaac/asset_root/cloud")
+# NUCLEUS_ASSET_ROOT_DIR = carb.settings.get_settings().get("/persistent/isaac/asset_root/cloud")
+NUCLEUS_ASSET_ROOT_DIR ="/home/li/isaacsim_assets/Assets/Isaac/4.5"
+
 """Path to the root directory on the Nucleus Server."""
 
 NVIDIA_NUCLEUS_DIR = f"{NUCLEUS_ASSET_ROOT_DIR}/NVIDIA"
@@ -32,6 +34,8 @@ ISAAC_NUCLEUS_DIR = f"{NUCLEUS_ASSET_ROOT_DIR}/Isaac"
 
 ISAACLAB_NUCLEUS_DIR = f"{ISAAC_NUCLEUS_DIR}/IsaacLab"
 """Path to the ``Isaac/IsaacLab`` directory on the NVIDIA Nucleus Server."""
+
+
 
 
 def check_file_path(path: str) -> Literal[0, 1, 2]:

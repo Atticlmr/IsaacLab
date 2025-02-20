@@ -81,9 +81,9 @@ def main():
     sim_dt = sim.get_physics_dt()
     sim_time = 0.0
     count = 0
-    # Simulate physics
+    # Simulate physics 开始仿真
     while simulation_app.is_running():
-        # reset
+        # reset 上限2000步
         if count % 2000 == 0:
             # reset counters
             sim_time = 0.0
