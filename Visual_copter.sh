@@ -1,0 +1,1 @@
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Isaac-Quadcopter-Visual-Direct-v0 --num_envs 64 --checkpoint /home/li/IsaacLab/logs/rsl_rl/quadcopter_direct/2025-02-20_16-39-56/model_199.pt
