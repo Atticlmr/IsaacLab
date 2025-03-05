@@ -150,3 +150,31 @@ class GroundPlaneCfg(SpawnerCfg):
 
     physics_material: materials.RigidBodyMaterialCfg = materials.RigidBodyMaterialCfg()
     """Physics material properties. Defaults to the default rigid body material."""
+# 森林环境的cfg，在init里注册一下
+
+# 目前g用的还是默认地面，回头找找森林的usd，或者自己拼一个
+# 或者可能有别的加载usd的方法
+# ///2025.3.5  lmr
+@configclass
+class forestPlaneCfg(SpawnerCfg):
+    """Create a ground plane prim.
+
+    This uses the USD for the standard grid-world ground plane from Isaac Sim by default.
+    """
+
+    func: Callable = from_files.spawn_ground_plane
+
+    usd_path: str = f"{ISAAC_NUCLEUS_DIR}/Environments/Grid/default_environment.usd"
+    """Path to the USD file to spawn asset from. Defaults to the grid-world ground plane."""
+
+    color: tuple[float, float, float] | None = (0.0, 0.0, 0.0)
+    """The color of the ground plane. Defaults to (0.0, 0.0, 0.0).
+
+    If None, then the color remains unchanged.
+    """
+
+    size: tuple[float, float] = (100.0, 100.0)
+    """The size of the ground plane. Defaults to 100 m x 100 m."""
+
+    physics_material: materials.RigidBodyMaterialCfg = materials.RigidBodyMaterialCfg()
+    """Physics material properties. Defaults to the default rigid body material."""

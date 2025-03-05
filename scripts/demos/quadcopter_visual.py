@@ -9,7 +9,7 @@ This script demonstrates how to simulate a quadcopter.
 .. code-block:: bash
 
     # Usage
-    ./isaaclab.sh -p scripts/demos/quadcopter.py
+    ./isaaclab.sh -p scripts/demos/quadcopter_visual.py
 
 """
 
@@ -55,9 +55,10 @@ from isaaclab.utils import configclass
 ##
 # Pre-defined configs
 ##
-from isaaclab_assets import CRAZYFLIE_CFG  # isort:skip
+# from isaaclab_assets import CRAZYFLIE_CFG  # isort:skip
+from isaaclab_assets import CRAZYFLIE_VISUAL_CFG # isort:skip
 
-# 这个是生成场景的配置，默认的崎岖地形场景
+# 这个是生成场景的配置，默认的崎岖地形场景，先做测试用，回头换成森林的
 from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG  # isort:skip
 
 
@@ -69,19 +70,35 @@ def main():
     sim_cfg = sim_utils.SimulationCfg(dt=0.005, device=args_cli.device)
     sim = SimulationContext(sim_cfg)
     # Set main camera
-    sim.set_camera_view(eye=[0.5, 0.5, 1.0], target=[0.0, 0.0, 0.5])
+
+    # 这个是相机坐标eye和相机朝向target
+    sim.set_camera_view(eye=[1.0, 0.5, 1.0], target=[0.0, 0.0, 0.5])
 
     # Spawn things into stage
-    # Ground-plane
-    cfg = sim_utils.GroundPlaneCfg()
+
+
+    # # Ground-plane
+    
+    
+    # cfg = sim_utils.GroundPlaneCfg()
+    # 目前仅仅改了cfg名字增加了一个cfg，可能有别的方法加载地形usd文件
+    cfg = sim_utils.forestPlaneCfg()
     cfg.func("/World/defaultGroundPlane", cfg)
+
+    
+
     # Lights
+    # 默认就是a平行光，适合模拟a太阳光
     cfg = sim_utils.DistantLightCfg(intensity=3000.0, color=(0.75, 0.75, 0.75))
     cfg.func("/World/Light", cfg)
 
+    
+
     # Robots
-    robot_cfg = CRAZYFLIE_CFG.replace(prim_path="/World/Crazyflie")
+    # 默认是crazyflie，目前只是改了名字3.5
+    robot_cfg = CRAZYFLIE_VISUAL_CFG.replace(prim_path="/World/Crazyflie")
     robot_cfg.spawn.func("/World/Crazyflie", robot_cfg.spawn, translation=robot_cfg.init_state.pos)
+
 
     # create handles for the robots
     robot = Articulation(robot_cfg)
@@ -98,12 +115,13 @@ def main():
     print("[INFO]: Setup complete...")
 
     # Define simulation stepping
+    # dt默认值好象是simulation_cfg.py的1/60,先不改
     sim_dt = sim.get_physics_dt()
     sim_time = 0.0
     count = 0
-    # Simulate physics 开始仿真
+    # Simulate physics 
     while simulation_app.is_running():
-        # reset 上限2000步
+        # reset 
         if count % 2000 == 0:
             # reset counters
             sim_time = 0.0

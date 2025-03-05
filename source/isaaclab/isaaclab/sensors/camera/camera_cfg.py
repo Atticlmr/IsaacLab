@@ -62,11 +62,6 @@ class CameraCfg(SensorBaseCfg):
     """
 
     data_types: list[str] = ["rgb"]
-    """List of sensor names/types to enable for the camera. Defaults to ["rgb"].
-
-    Please refer to the :class:`Camera` class for a list of available data types.
-    """
-
     width: int = MISSING
     """Width of the image in pixels."""
 

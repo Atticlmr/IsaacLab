@@ -10,23 +10,31 @@ from isaaclab.utils import configclass
 
 from ..asset_base_cfg import AssetBaseCfg
 from .articulation import Articulation
+# r
 
 
 @configclass
 class ArticulationCfg(AssetBaseCfg):
+    # articulation 是一个物理模拟中的物理对象，它由一个或多个物理链接组成，链接之间通过关节连接。
     """Configuration parameters for an articulation."""
+    
 
     @configclass
     class InitialStateCfg(AssetBaseCfg.InitialStateCfg):
         """Initial state of the articulation."""
+        # 初始参数
 
         # root velocity
+
+        # 线速度
         lin_vel: tuple[float, float, float] = (0.0, 0.0, 0.0)
         """Linear velocity of the root in simulation world frame. Defaults to (0.0, 0.0, 0.0)."""
+        # 角速度
         ang_vel: tuple[float, float, float] = (0.0, 0.0, 0.0)
         """Angular velocity of the root in simulation world frame. Defaults to (0.0, 0.0, 0.0)."""
 
         # joint state
+        """定义关节的相关参数"""
         joint_pos: dict[str, float] = {".*": 0.0}
         """Joint positions of the joints. Defaults to 0.0 for all joints."""
         joint_vel: dict[str, float] = {".*": 0.0}

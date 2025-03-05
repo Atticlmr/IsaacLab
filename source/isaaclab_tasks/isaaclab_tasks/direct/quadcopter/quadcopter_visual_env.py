@@ -74,6 +74,10 @@ class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
     decimation = 2
     action_space = 4
     observation_space = 12
+    
+    # 深度图
+    observation_depth_space = 12
+
     state_space = 0
     debug_vis = True
 
@@ -81,6 +85,10 @@ class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
 
     # simulation
     sim: SimulationCfg = SimulationCfg(
+
+        # dt也许要改，n按照back to Newton‘s law那篇好像是1/30, 等下看看
+
+
         dt=1 / 100,
         render_interval=decimation,
         disable_contact_processing=True,
@@ -110,6 +118,11 @@ class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=2.5, replicate_physics=True)
 
     # robot
+    # 这几个参数不一定要改，看着办吧
+
+    
+
+
     robot: ArticulationCfg = CRAZYFLIE_VISUAL_CFG.replace(prim_path="/World/envs/env_.*/Robot")
     thrust_to_weight = 1.9
     moment_scale = 0.01

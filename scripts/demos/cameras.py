@@ -157,8 +157,12 @@ def save_images_grid(
     # adjust layout to fit the title
     plt.tight_layout()
     # save the figure
+    
     if filename:
+    # if True:
+        
         os.makedirs(os.path.dirname(filename), exist_ok=True)
+        
         plt.savefig(filename)
     # close the figure
     plt.close()

@@ -22,6 +22,8 @@ import carb
 import omni.client
 
 # NUCLEUS_ASSET_ROOT_DIR = carb.settings.get_settings().get("/persistent/isaac/asset_root/cloud")
+# 这里被我改过，原来是从nvidida官网下载，现在是从本地目录
+# 暂时没有别的解决办法
 NUCLEUS_ASSET_ROOT_DIR ="/home/li/isaacsim_assets/Assets/Isaac/4.5"
 
 """Path to the root directory on the Nucleus Server."""
