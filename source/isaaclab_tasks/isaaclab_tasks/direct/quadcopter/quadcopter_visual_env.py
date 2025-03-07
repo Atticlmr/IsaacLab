@@ -109,9 +109,19 @@ class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
         ),
         debug_vis=False,
     )
+    
+    # scene
+    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=2.5, replicate_physics=True)
+    
+    # robot
+    # 替换原有的prim，让quadcopter生成在并行env的位置，采用相对路径prim生成
+    robot: ArticulationCfg = CRAZYFLIE_VISUAL_CFG.replace(prim_path="/World/envs/env_.*/quadcopter")
+    thrust_to_weight = 1.9
+    moment_scale = 0.01
+
     # ============================Camera======================================
-    camera = CameraCfg(
-        prim_path="/World/envs/env_.*/Robot",
+    camera:CameraCfg=CameraCfg(
+        prim_path="/World/envs/env_.*/quadcopter/body/camera",
         update_period=0.1,
         height=480,
         width=640,
@@ -121,30 +131,10 @@ class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
         ),
         offset=CameraCfg.OffsetCfg(pos=(0.510, 0.0, 0.015), rot=(0.5, -0.5, 0.5, -0.5), convention="ros"),
     )
-
     # ============================IMU========================================
     # 参考scripts/demos/sensors/imu_sensor.py
-    # imu_RF = ImuCfg(prim_path="{ENV_REGEX_NS}/Robot/LF_FOOT", debug_vis=True)
-    # https://docs.robotsfan.com/isaaclab/source/tutorials/04_sensors/add_sensors_on_robot.html
-    # 貌似有点眉目了sensors得用sensor对应的cfg，usd文件得用articulationcfg
-
-
-    """
-    250306
-    参考/home/li/IsaacLab/scripts/tutorials/04_sensors/add_sensors_on_copter.py
-    成功添加一个相机在body上 接下来需要添加IMU
-
-    """
-    
-    # scene
-    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=2.5, replicate_physics=True)
-    
-    # robot
-    # 替换原有的prim，让quadcopter生成在并行env的位置，采用相对路径prim生成
-    robot: ArticulationCfg = CRAZYFLIE_VISUAL_CFG.replace(prim_path="/World/envs/env_.*/Robot")
-    thrust_to_weight = 1.9
-    moment_scale = 0.01
-
+    # imu:ImuCfg = ImuCfg(prim_path="/World/envs/env_.*/Robot/body/IMU", debug_vis=True)
+    # imu还有点问题source/isaaclab/isaaclab/sensors/imu/imu.py
     # reward scalesu 
     # 权重
     lin_vel_reward_scale = -0.05
@@ -159,8 +149,6 @@ class QuadcopterVisualEnv(DirectRLEnv):
         super().__init__(cfg, render_mode, **kwargs)
 
         # Total thrust and moment applied to the base of the quadcopter
-
-
         '''
         初始化参数  因为是num_envs个环境并行
         num_envs x single_action_space
@@ -168,11 +156,6 @@ class QuadcopterVisualEnv(DirectRLEnv):
         self._thrust :(num_envs, 1, 3) 推力
         self._moment :(num_envs, 1, 3) 力矩
         '''
-
-        # IMU 数据
-        self.IMU_data = None
-        
-
         self._actions = torch.zeros(self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device)
         self._thrust = torch.zeros(self.num_envs, 1, 3, device=self.device)
         self._moment = torch.zeros(self.num_envs, 1, 3, device=self.device)
@@ -199,16 +182,12 @@ class QuadcopterVisualEnv(DirectRLEnv):
         self.set_debug_vis(self.cfg.debug_vis)
 
     def _setup_scene(self):
+        # add robot
         self._robot = Articulation(self.cfg.robot)
-        self.scene.articulations["robot"] = self._robot
+        self.scene.articulations["robot"] = self._robot  
+        self.scene.sensors["camera"]=Camera(self.cfg.camera)
 
-        # 250305 这部分参考/home/li/IsaacLab/source/isaaclab_tasks/isaaclab_tasks/direct/anymal_c/anymal_c_env.py
-        # self._contact_sensor = ContactSensor(self.cfg.contact_sensor)
-        # self.scene.sensors["contact_sensor"] = self._contact_sensor
-        # self._imu_sensor = Imu(self.cfg.IMU)
-        # self.scene.sensors["IMU"] = self._imu_sensor
-        # 250306 应该参考isaaclab的文档，有关Interactivescene那一部分的，不应该直接看isaacsim的
-
+        #add envs
         self.cfg.terrain.num_envs = self.scene.cfg.num_envs
         self.cfg.terrain.env_spacing = self.scene.cfg.env_spacing
         self._terrain = self.cfg.terrain.class_type(self.cfg.terrain)
@@ -219,21 +198,6 @@ class QuadcopterVisualEnv(DirectRLEnv):
         light_cfg.func("/World/Light", light_cfg)
         
         
-        # add IMU
-        #=========================================
-        
-        print("--------------IMU data!!!!!!!!!!!!!!-----------------")
-        # print(type(self.scene["IMU"]))
-        # print("Received linear velocity: ", self.scene["IMU"].data.lin_vel_b)
-        # print("Received angular velocity: ", self.scene["IMU"].data.ang_vel_b)
-        # print("Received linear acceleration: ", self.scene["IMU"].data.lin_acc_b)
-        # print("Received angular acceleration: ", self.scene["IMU"].data.ang_acc_b)
-        # print(self.scene["IMU"].data())
-        """
-
-        
-        """
-        #=========================================
 
     def _pre_physics_step(self, actions: torch.Tensor):
         self._actions = actions.clone().clamp(-1.0, 1.0)
