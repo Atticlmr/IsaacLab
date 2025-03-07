@@ -43,22 +43,12 @@ import isaaclab.sim as sim_utils
 from isaaclab.assets import Articulation
 from isaaclab.sim import SimulationContext
 
-# =============================================================================
-from isaaclab.assets import ArticulationCfg, AssetBaseCfg
-from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
-from isaaclab.sensors import CameraCfg, RayCasterCameraCfg, TiledCameraCfg
-from isaaclab.sensors.ray_caster import patterns
-from isaaclab.terrains import TerrainImporterCfg
-from isaaclab.utils import configclass
 
 
 ##
 # Pre-defined configs
 ##
 from isaaclab_assets import CRAZYFLIE_CFG  # isort:skip
-
-# 这个是生成场景的配置，默认的崎岖地形场景
-from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG  # isort:skip
 
 
 

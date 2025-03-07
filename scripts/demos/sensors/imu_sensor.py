@@ -52,6 +52,13 @@ class ImuSensorSceneCfg(InteractiveSceneCfg):
     # robot
     robot = ANYMAL_C_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
+    # 左右脚各加了一个IMU，怎么确定位置的？貌似是prim树里的位置
+    # IMU cfg如何使用才能激活IMU？scene
+    # 2025/3/5 需要在scene里面注册什么东西entity，scene里面的entity到底是怎么确定的呢 
+    # 根据scene输入的cfg来确定的
+    # prim怎么查看？ maybe GUI直接查看是一种方法，还有就是查看源文件
+    
+
     imu_RF = ImuCfg(prim_path="{ENV_REGEX_NS}/Robot/LF_FOOT", debug_vis=True)
 
     imu_LF = ImuCfg(prim_path="{ENV_REGEX_NS}/Robot/RF_FOOT", gravity_bias=(0, 0, 0), debug_vis=True)
@@ -116,6 +123,31 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         print("Received angular velocity: ", scene["imu_RF"].data.ang_vel_b)
         print("Received linear acceleration: ", scene["imu_RF"].data.lin_acc_b)
         print("Received angular acceleration: ", scene["imu_RF"].data.ang_acc_b)
+
+        """
+        
+        -------------------------------
+        Imu sensor @ '/World/envs/env_.*/Robot/RF_FOOT': 
+            view type         : <class 'omni.physics.tensors.impl.api.RigidBodyView'>
+            update period (s) : 0.0
+            number of sensors : 1
+
+        Received linear velocity:  tensor([[0.0213, 0.0068, 0.0347]], device='cuda:0')
+        Received angular velocity:  tensor([[ 0.0411, -0.1799, -0.0302]], device='cuda:0')
+        Received linear acceleration:  tensor([[ 0.2463,  1.1423, -1.3141]], device='cuda:0')
+        Received angular acceleration:  tensor([[ 2.1672,  1.1752, -1.0484]], device='cuda:0')
+        -------------------------------
+        Imu sensor @ '/World/envs/env_.*/Robot/LF_FOOT': 
+            view type         : <class 'omni.physics.tensors.impl.api.RigidBodyView'>
+            update period (s) : 0.0
+            number of sensors : 1
+
+        Received linear velocity:  tensor([[ 0.0215, -0.0062,  0.0417]], device='cuda:0')
+        Received angular velocity:  tensor([[ 0.0185, -0.1411, -0.0182]], device='cuda:0')
+        Received linear acceleration:  tensor([[ 4.8219, -0.0418,  8.5000]], device='cuda:0')
+        Received angular acceleration:  tensor([[0.0793, 0.9098, 0.0690]], device='cuda:0')
+        
+        """
 
 
 def main():

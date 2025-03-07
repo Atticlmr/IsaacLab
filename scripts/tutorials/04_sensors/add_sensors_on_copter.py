@@ -44,16 +44,14 @@ import torch
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
-from isaaclab.sensors import CameraCfg, ContactSensorCfg, RayCasterCfg, patterns
+from isaaclab.sensors import CameraCfg
 from isaaclab.utils import configclass
 
 ##
 # Pre-defined configs
 ##
 from isaaclab_assets.robots.anymal import ANYMAL_C_CFG  # isort: skip
-
-# copter
-from isaaclab_assets.robots.quadcopter import CRAZYFLIE_VISUAL_CFG
+from isaaclab_assets import CRAZYFLIE_CFG  # isort:skip
 
 @configclass
 class SensorsSceneCfg(InteractiveSceneCfg):
@@ -69,13 +67,12 @@ class SensorsSceneCfg(InteractiveSceneCfg):
 
     # robot
     # robot: ArticulationCfg = ANYMAL_C_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-    # quadcopter
-    robot: ArticulationCfg = CRAZYFLIE_VISUAL_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-
+    # Robots
+    robot = CRAZYFLIE_CFG.replace(prim_path="{ENV_REGEX_NS}/Crazyflie")
     # sensors
     camera = CameraCfg(
-        prim_path="{ENV_REGEX_NS}/Robot/base/front_cam",
-        update_period=0.03,  # 帧数
+        prim_path="{ENV_REGEX_NS}/Crazyflie/body/f_cam",
+        update_period=0.1,
         height=480,
         width=640,
         data_types=["rgb", "distance_to_image_plane"],
@@ -83,18 +80,6 @@ class SensorsSceneCfg(InteractiveSceneCfg):
             focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
         ),
         offset=CameraCfg.OffsetCfg(pos=(0.510, 0.0, 0.015), rot=(0.5, -0.5, 0.5, -0.5), convention="ros"),
-    )
-    height_scanner = RayCasterCfg(
-        prim_path="{ENV_REGEX_NS}/Robot/base",
-        update_period=0.02,
-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
-        attach_yaw_only=True,
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
-        debug_vis=True,
-        mesh_prim_paths=["/World/defaultGroundPlane"],
-    )
-    contact_forces = ContactSensorCfg(
-        prim_path="{ENV_REGEX_NS}/Robot/.*_FOOT", update_period=0.0, history_length=6, debug_vis=True
     )
 
 
@@ -149,13 +134,6 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         print(scene["camera"])
         print("Received shape of rgb   image: ", scene["camera"].data.output["rgb"].shape)
         print("Received shape of depth image: ", scene["camera"].data.output["distance_to_image_plane"].shape)
-        print("-------------------------------")
-        print(scene["height_scanner"])
-        print("Received max height value: ", torch.max(scene["height_scanner"].data.ray_hits_w[..., -1]).item())
-        print("-------------------------------")
-        print(scene["contact_forces"])
-        print("Received max contact force of: ", torch.max(scene["contact_forces"].data.net_forces_w).item())
-
 
 def main():
     """Main function."""

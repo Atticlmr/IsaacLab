@@ -26,30 +26,15 @@ from isaaclab.utils.math import subtract_frame_transforms
 from isaaclab_assets import CRAZYFLIE_VISUAL_CFG  # isort: skip
 from isaaclab.markers import CUBOID_MARKER_CFG  # isort: skip
 
+# from isaaclab.sensors import ContactSensor, RayCaster
+from isaaclab.sensors import ImuCfg,CameraCfg,Imu,Camera
+# 计划加个IMU，加个深度相机，2025/3/5未解决但是有点眉目
 
-# class QuadcopterEnvWindow(BaseEnvWindow):
-#     """Window manager for the Quadcopter environment."""
-
-#     def __init__(self, env: QuadcopterEnv, window_name: str = "IsaacLab"):
-#         """Initialize the window.
-
-#         Args:
-#             env: The environment object.
-#             window_name: The name of the window. Defaults to "IsaacLab".
-#         """
-#         # initialize base window
-#         super().__init__(env, window_name)
-#         # add custom UI elements
-#         with self.ui_window_elements["main_vstack"]:
-#             with self.ui_window_elements["debug_frame"]:
-#                 with self.ui_window_elements["debug_vstack"]:
-#                     # add command manager visualization
-#                     self._create_debug_vis_ui_element("targets", self.env)
 
 class QuadcopterVisualEnvWindow(BaseEnvWindow):
     """Window manager for the Quadcopter environment."""
 
-    def __init__(self, env: QuadcopterVisualEnv, window_name: str = "IsaacLab"):
+    def __init__(self, env: QuadcopterVisualEnv, window_name: str = "IsaacLab_visualcopter"):
         """Initialize the window.
 
         Args:
@@ -65,10 +50,24 @@ class QuadcopterVisualEnvWindow(BaseEnvWindow):
                     # add command manager visualization
                     self._create_debug_vis_ui_element("targets", self.env)
 
+"""
+地面平面和光源是不可交互的 而cartpole是可交互的。
+这种区别在用于指定它们的配置类中得到了体现。
+地面平面和光源的配置使用 assets.AssetBaseCfg 的实例来指定，
+而cartpole使用 assets.ArticulationCfg 的实例来进行配置。
+在模拟步骤期间 不处理任何不是交互式prim 即既不是资产也不是传感器
+"""
+
 
 
 @configclass
 class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
+
+
+    # seed 种子，不设置的化就随机
+    # seed = 42
+
+
     # env
     episode_length_s = 10.0
     decimation = 2
@@ -76,7 +75,7 @@ class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
     observation_space = 12
     
     # 深度图
-    observation_depth_space = 12
+    observation_depth_space = None
 
     state_space = 0
     debug_vis = True
@@ -85,10 +84,7 @@ class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
 
     # simulation
     sim: SimulationCfg = SimulationCfg(
-
-        # dt也许要改，n按照back to Newton‘s law那篇好像是1/30, 等下看看
-
-
+        # dt 默认值1/60 在simulation_cfg.py
         dt=1 / 100,
         render_interval=decimation,
         disable_contact_processing=True,
@@ -113,21 +109,44 @@ class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
         ),
         debug_vis=False,
     )
+    # ============================Camera======================================
+    camera = CameraCfg(
+        prim_path="/World/envs/env_.*/Robot",
+        update_period=0.1,
+        height=480,
+        width=640,
+        data_types=["rgb", "distance_to_image_plane"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
+        ),
+        offset=CameraCfg.OffsetCfg(pos=(0.510, 0.0, 0.015), rot=(0.5, -0.5, 0.5, -0.5), convention="ros"),
+    )
 
+    # ============================IMU========================================
+    # 参考scripts/demos/sensors/imu_sensor.py
+    # imu_RF = ImuCfg(prim_path="{ENV_REGEX_NS}/Robot/LF_FOOT", debug_vis=True)
+    # https://docs.robotsfan.com/isaaclab/source/tutorials/04_sensors/add_sensors_on_robot.html
+    # 貌似有点眉目了sensors得用sensor对应的cfg，usd文件得用articulationcfg
+
+
+    """
+    250306
+    参考/home/li/IsaacLab/scripts/tutorials/04_sensors/add_sensors_on_copter.py
+    成功添加一个相机在body上 接下来需要添加IMU
+
+    """
+    
     # scene
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=2.5, replicate_physics=True)
-
-    # robot
-    # 这几个参数不一定要改，看着办吧
-
     
-
-
+    # robot
+    # 替换原有的prim，让quadcopter生成在并行env的位置，采用相对路径prim生成
     robot: ArticulationCfg = CRAZYFLIE_VISUAL_CFG.replace(prim_path="/World/envs/env_.*/Robot")
     thrust_to_weight = 1.9
     moment_scale = 0.01
 
-    # reward scales
+    # reward scalesu 
+    # 权重
     lin_vel_reward_scale = -0.05
     ang_vel_reward_scale = -0.01
     distance_to_goal_reward_scale = 15.0
@@ -140,11 +159,26 @@ class QuadcopterVisualEnv(DirectRLEnv):
         super().__init__(cfg, render_mode, **kwargs)
 
         # Total thrust and moment applied to the base of the quadcopter
+
+
+        '''
+        初始化参数  因为是num_envs个环境并行
+        num_envs x single_action_space
+        torch.zeros(*size, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) → Tensor
+        self._thrust :(num_envs, 1, 3) 推力
+        self._moment :(num_envs, 1, 3) 力矩
+        '''
+
+        # IMU 数据
+        self.IMU_data = None
+        
+
         self._actions = torch.zeros(self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device)
         self._thrust = torch.zeros(self.num_envs, 1, 3, device=self.device)
         self._moment = torch.zeros(self.num_envs, 1, 3, device=self.device)
         # Goal position
         self._desired_pos_w = torch.zeros(self.num_envs, 3, device=self.device)
+
 
         # Logging
         self._episode_sums = {
@@ -168,6 +202,13 @@ class QuadcopterVisualEnv(DirectRLEnv):
         self._robot = Articulation(self.cfg.robot)
         self.scene.articulations["robot"] = self._robot
 
+        # 250305 这部分参考/home/li/IsaacLab/source/isaaclab_tasks/isaaclab_tasks/direct/anymal_c/anymal_c_env.py
+        # self._contact_sensor = ContactSensor(self.cfg.contact_sensor)
+        # self.scene.sensors["contact_sensor"] = self._contact_sensor
+        # self._imu_sensor = Imu(self.cfg.IMU)
+        # self.scene.sensors["IMU"] = self._imu_sensor
+        # 250306 应该参考isaaclab的文档，有关Interactivescene那一部分的，不应该直接看isaacsim的
+
         self.cfg.terrain.num_envs = self.scene.cfg.num_envs
         self.cfg.terrain.env_spacing = self.scene.cfg.env_spacing
         self._terrain = self.cfg.terrain.class_type(self.cfg.terrain)
@@ -176,6 +217,23 @@ class QuadcopterVisualEnv(DirectRLEnv):
         # add lights
         light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
         light_cfg.func("/World/Light", light_cfg)
+        
+        
+        # add IMU
+        #=========================================
+        
+        print("--------------IMU data!!!!!!!!!!!!!!-----------------")
+        # print(type(self.scene["IMU"]))
+        # print("Received linear velocity: ", self.scene["IMU"].data.lin_vel_b)
+        # print("Received angular velocity: ", self.scene["IMU"].data.ang_vel_b)
+        # print("Received linear acceleration: ", self.scene["IMU"].data.lin_acc_b)
+        # print("Received angular acceleration: ", self.scene["IMU"].data.ang_acc_b)
+        # print(self.scene["IMU"].data())
+        """
+
+        
+        """
+        #=========================================
 
     def _pre_physics_step(self, actions: torch.Tensor):
         self._actions = actions.clone().clamp(-1.0, 1.0)
@@ -202,9 +260,14 @@ class QuadcopterVisualEnv(DirectRLEnv):
         return observations
 
     def _get_rewards(self) -> torch.Tensor:
+        """
+        
+        
+        """
         lin_vel = torch.sum(torch.square(self._robot.data.root_lin_vel_b), dim=1)
         ang_vel = torch.sum(torch.square(self._robot.data.root_ang_vel_b), dim=1)
         distance_to_goal = torch.linalg.norm(self._desired_pos_w - self._robot.data.root_pos_w, dim=1)
+        # 归一化
         distance_to_goal_mapped = 1 - torch.tanh(distance_to_goal / 0.8)
         rewards = {
             "lin_vel": lin_vel * self.cfg.lin_vel_reward_scale * self.step_dt,
