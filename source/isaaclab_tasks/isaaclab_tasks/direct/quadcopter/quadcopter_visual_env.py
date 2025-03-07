@@ -28,7 +28,6 @@ from isaaclab.markers import CUBOID_MARKER_CFG  # isort: skip
 
 # from isaaclab.sensors import ContactSensor, RayCaster
 from isaaclab.sensors import ImuCfg,CameraCfg,Imu,Camera
-# 计划加个IMU，加个深度相机，2025/3/5未解决但是有点眉目
 
 
 class QuadcopterVisualEnvWindow(BaseEnvWindow):
@@ -49,15 +48,6 @@ class QuadcopterVisualEnvWindow(BaseEnvWindow):
                 with self.ui_window_elements["debug_vstack"]:
                     # add command manager visualization
                     self._create_debug_vis_ui_element("targets", self.env)
-
-"""
-地面平面和光源是不可交互的 而cartpole是可交互的。
-这种区别在用于指定它们的配置类中得到了体现。
-地面平面和光源的配置使用 assets.AssetBaseCfg 的实例来指定，
-而cartpole使用 assets.ArticulationCfg 的实例来进行配置。
-在模拟步骤期间 不处理任何不是交互式prim 即既不是资产也不是传感器
-"""
-
 
 
 @configclass
@@ -133,8 +123,8 @@ class QuadcopterVisualEnvCfg(DirectRLEnvCfg):
     )
     # ============================IMU========================================
     # 参考scripts/demos/sensors/imu_sensor.py
-    # imu:ImuCfg = ImuCfg(prim_path="/World/envs/env_.*/Robot/body/IMU", debug_vis=True)
-    # imu还有点问题source/isaaclab/isaaclab/sensors/imu/imu.py
+    imu:ImuCfg = ImuCfg(prim_path="/World/envs/env_.*/quadcopter/body")
+    # imu还有点问题,不知道为什么debugviz不能开
     # reward scalesu 
     # 权重
     lin_vel_reward_scale = -0.05
@@ -186,7 +176,7 @@ class QuadcopterVisualEnv(DirectRLEnv):
         self._robot = Articulation(self.cfg.robot)
         self.scene.articulations["robot"] = self._robot  
         self.scene.sensors["camera"]=Camera(self.cfg.camera)
-
+        self.scene.sensors["imu"]=Imu(self.cfg.imu)
         #add envs
         self.cfg.terrain.num_envs = self.scene.cfg.num_envs
         self.cfg.terrain.env_spacing = self.scene.cfg.env_spacing

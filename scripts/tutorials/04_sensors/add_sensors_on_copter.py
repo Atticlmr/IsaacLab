@@ -15,7 +15,7 @@ We add the following sensors on the quadruped robot, ANYmal-C (ANYbotics):
 .. code-block:: bash
 
     # Usage
-    ./isaaclab.sh -p scripts/tutorials/04_sensors/add_sensors_on_robot.py --enable_cameras
+    ./isaaclab.sh -p scripts/tutorials/04_sensors/add_sensors_on_copter.py --enable_cameras
 
 """
 
@@ -44,7 +44,7 @@ import torch
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
-from isaaclab.sensors import CameraCfg
+from isaaclab.sensors import ImuCfg,CameraCfg,Imu,Camera
 from isaaclab.utils import configclass
 
 ##
@@ -81,7 +81,7 @@ class SensorsSceneCfg(InteractiveSceneCfg):
         ),
         offset=CameraCfg.OffsetCfg(pos=(0.510, 0.0, 0.015), rot=(0.5, -0.5, 0.5, -0.5), convention="ros"),
     )
-
+    imu:ImuCfg = ImuCfg(prim_path="{ENV_REGEX_NS}/Crazyflie/body")
 
 def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     """Run the simulator."""
@@ -130,10 +130,15 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         scene.update(sim_dt)
 
         # print information from the sensors
-        print("-------------------------------")
-        print(scene["camera"])
-        print("Received shape of rgb   image: ", scene["camera"].data.output["rgb"].shape)
-        print("Received shape of depth image: ", scene["camera"].data.output["distance_to_image_plane"].shape)
+        # print("-------------------------------")
+        # print(scene["camera"])
+        # print("Received shape of rgb   image: ", scene["camera"].data.output["rgb"].shape)
+        # print("Received shape of depth image: ", scene["camera"].data.output["distance_to_image_plane"].shape)
+        print(scene["imu"])
+        print("Received linear velocity: ", scene["imu"].data.lin_vel_b)
+        print("Received angular velocity: ", scene["imu"].data.ang_vel_b)
+        print("Received linear acceleration: ", scene["imu"].data.lin_acc_b)
+        print("Received angular acceleration: ", scene["imu"].data.ang_acc_b)
 
 def main():
     """Main function."""

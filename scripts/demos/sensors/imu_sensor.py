@@ -52,7 +52,7 @@ class ImuSensorSceneCfg(InteractiveSceneCfg):
     # robot
     robot = ANYMAL_C_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
-    # 左右脚各加了一个IMU，怎么确定位置的？貌似是prim树里的位置
+    # 左右脚各加了一个IMU，怎么确定位置的？是prim树里的位置
     # IMU cfg如何使用才能激活IMU？scene
     # 2025/3/5 需要在scene里面注册什么东西entity，scene里面的entity到底是怎么确定的呢 
     # 根据scene输入的cfg来确定的
